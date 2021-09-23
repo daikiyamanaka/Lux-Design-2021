@@ -156,10 +156,16 @@ def get_random_direction():
     return dirs[np.random.randint(0, 4)]
 
 def move_unit(unit, direction, unit_map):
-    print (direction)
+    width, height = game_state.map.width, game_state.map.height
     delta = deltas[direction]
     x = unit.pos.x + delta[0]
     y = unit.pos.y + delta[1]
+
+    if x <= 0 or width <= x:
+        return None
+    if y <= 0 or height <= y:
+        return None
+
     if unit_map[x, y]:  # already visited
         # randomely moved
         d = get_random_direction()
