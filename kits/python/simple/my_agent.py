@@ -9,6 +9,7 @@ from lux import annotate
 DIRECTIONS = Constants.DIRECTIONS
 game_state = None
 
+np.random.seed(0)
 
 # this snippet finds all resources stored on the map and puts them into a list so we can search over them
 def find_resources(game_state):
