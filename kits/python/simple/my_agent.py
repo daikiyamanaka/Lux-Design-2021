@@ -149,18 +149,36 @@ def calc_city_burn_fuel(game_map, cities):
 
 deltas = {'n': (0, -1), 's': (0, 1), 'w': (-1, 0), 'e': (1, 0), 'c': (0, 0)}
 
+unit_destinations = []
+
+def get_random_direction():
+    dirs = ['n', 's', 'w', 'e', 'c']
+    return dirs[np.random.randint(0, 4)]
+
 def move_unit(unit, direction, unit_map):
     print (direction)
     delta = deltas[direction]
     x = unit.pos.x + delta[0]
     y = unit.pos.y + delta[1]
-    # already visited
-    if unit_map[x, y]: 
-        return None
+    if unit_map[x, y]:  # already visited
+        # randomely moved
+        d = get_random_direction()
+        if d != direction:
+            return move_unit(unit, d, unit_map)
+        else:
+            return None
 
     action = unit.move(direction)
     unit_map[x, y] = True
+    unit_destinations.append((x, y))
     return action
+
+def get_movable_map(game_map, player):
+    pass
+    #movable_map = np.zeros((width, height), dtype=bool)
+
+    #return movable_map
+
 
 def agent(observation, configuration):
     global game_state
@@ -183,6 +201,7 @@ def agent(observation, configuration):
     width, height = game_state.map.width, game_state.map.height
     game_map = game_state.map
 
+    unit_destinations.clear()
 
     # get resource_tiles
     resource_tiles: list[Cell] = []
@@ -191,6 +210,9 @@ def agent(observation, configuration):
             cell = game_state.map.get_cell(x, y)
             if cell.has_resource():
                 resource_tiles.append(cell)
+
+    # detect movable area
+    movable_map = get_movable_map(game_map, player)    
 
     # count units
     num_workers = sum([unit.is_worker() for unit in player.units])
@@ -203,14 +225,17 @@ def agent(observation, configuration):
             cititiles.append(tile)
             # city has enough fuel
             if tile.can_act():
+                action = None
                 if num_cititiles > len(player.units):
                     if num_workers / 5 <= num_carts:
                         action = tile.build_worker()
                     else:
                         action = tile.build_cart()
                 else:
-                    action = tile.research()
-                actions.append(action)
+                    if not player.researched_coal() or not player.researched_uranium():
+                        action = tile.research()
+                if action is not None:
+                    actions.append(action)
 
     # check city burn fuel
     tile_info = calc_city_burn_fuel(game_map, player.cities.values())
@@ -228,12 +253,11 @@ def agent(observation, configuration):
     # we iterate over all our units and do something with them
     for unit in player.units:
         if unit.is_worker() and unit.can_act():
+            action = None
             if unit.get_cargo_space_left() > 0:
                 closest_resource_tile = find_closest_resources(unit.pos, player, resource_tiles)
                 if closest_resource_tile is not None:                    
                     action = move_unit(unit, unit.pos.direction_to(closest_resource_tile.pos), unit_map)
-                    if action is not None:
-                        actions.append(action)
             else:
                 action = None
                 if enough_fuel:
@@ -252,13 +276,15 @@ def agent(observation, configuration):
                         if closest_city_tile is not None:
                             action = move_unit(unit, unit.pos.direction_to(closest_city_tile.pos), unit_map)
                 
-                if action is not None:
-                    actions.append(action)
-                else: # unit not move
-                    unit_map[unit.pos.x, unit.pos.y] = True
+            if action is not None:
+                actions.append(action)
+            else: # unit not move
+                unit_map[unit.pos.x, unit.pos.y] = True
 
             print (actions)
 
+    for dst in unit_destinations:
+        actions.append(annotate.circle(dst[0], dst[1]))
     # you can add debug annotations using the functions in the annotate object
     # actions.append(annotate.circle(0, 0))
     return actions
