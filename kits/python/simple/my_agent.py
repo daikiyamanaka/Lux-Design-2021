@@ -234,7 +234,7 @@ def agent(observation, configuration):
             if tile.can_act():
                 action = None
                 if num_cititiles > len(player.units):
-                    if num_workers / 5 <= num_carts:
+                    if num_workers // 5 <= num_carts:
                         action = tile.build_worker()
                     else:
                         action = tile.build_cart()
