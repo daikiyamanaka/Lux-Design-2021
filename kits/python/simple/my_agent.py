@@ -182,7 +182,7 @@ def agent(observation, configuration):
             cititiles.append(tile)
             # city has enough fuel
             if tile.can_act():
-                if num_cititiles < len(player.units) :
+                if num_cititiles > len(player.units):
                     action = tile.build_worker()
                 else:
                     action = tile.research()
