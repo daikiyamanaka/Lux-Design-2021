@@ -1,4 +1,5 @@
 import math, sys
+import numpy as np
 from lux.game import Game
 from lux.game_map import Cell, RESOURCE_TYPES, Position
 from lux.constants import Constants
@@ -145,6 +146,22 @@ def calc_city_burn_fuel(game_map, cities):
         tile_info[(tile.pos.x, tile.pos.y)] = (burn_fuel, may_be_burn_out)
     return tile_info
 
+
+deltas = {'n': (0, 1), 's': (0, -1), 'w': (-1, 0), 'e': (1, 0), 'c': (0, 0)}
+
+def move_unit(unit, direction, unit_map):
+    print (direction)
+    delta = deltas[direction]
+    x = unit.pos.x + delta[0]
+    y = unit.pos.y + delta[1]
+    # already visited
+    if unit_map[x, y]: 
+        return None
+
+    action = unit.move(direction)
+    unit_map[x, y] = True
+    return action
+
 def agent(observation, configuration):
     global game_state
 
@@ -195,6 +212,7 @@ def agent(observation, configuration):
                     action = tile.research()
                 actions.append(action)
 
+    # check city burn fuel
     tile_info = calc_city_burn_fuel(game_map, player.cities.values())
     enough_fuel = True
     burn_out_city_pos = None
@@ -204,15 +222,18 @@ def agent(observation, configuration):
             burn_out_city_pos = tile_pos
             break
     
+    # grid map for avoid collision
+    unit_map = np.zeros((width, height), dtype=bool)
 
     # we iterate over all our units and do something with them
     for unit in player.units:
         if unit.is_worker() and unit.can_act():
             if unit.get_cargo_space_left() > 0:
                 closest_resource_tile = find_closest_resources(unit.pos, player, resource_tiles)
-                if closest_resource_tile is not None:
-                    action = unit.move(unit.pos.direction_to(closest_resource_tile.pos))
-                    actions.append(action)
+                if closest_resource_tile is not None:                    
+                    action = move_unit(unit, unit.pos.direction_to(closest_resource_tile.pos), unit_map)
+                    if action is not None:
+                        actions.append(action)
             else:
                 action = None
                 if enough_fuel:
@@ -220,10 +241,9 @@ def agent(observation, configuration):
                         action = unit.build_city()
                     else: # move to freespace next to city
                         pos = find_closest_city_candidate(game_map, unit.pos, player)
-                        
                         if pos is not None:
-                            action = unit.move(unit.pos.direction_to(pos))
-                            actions.append(annotate.circle(pos.x, pos.y))
+                            action = move_unit(unit, unit.pos.direction_to(pos), unit_map)
+                            #actions.append(annotate.circle(pos.x, pos.y))
 
                 if action is None:
                     if burn_out_city_pos is not None:
@@ -232,7 +252,7 @@ def agent(observation, configuration):
                     else:
                         closest_city_tile = find_closest_city_tile(unit.pos, player)
                         if closest_city_tile is not None:
-                            action = unit.move(unit.pos.direction_to(closest_city_tile.pos))
+                            action = move_unit(unit, unit.pos.direction_to(closest_city_tile.pos), unit_map)
                 
                 if action is not None:
                     actions.append(action)
