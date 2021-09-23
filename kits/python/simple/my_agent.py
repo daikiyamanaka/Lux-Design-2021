@@ -147,7 +147,7 @@ def calc_city_burn_fuel(game_map, cities):
     return tile_info
 
 
-deltas = {'n': (0, 1), 's': (0, -1), 'w': (-1, 0), 'e': (1, 0), 'c': (0, 0)}
+deltas = {'n': (0, -1), 's': (0, 1), 'w': (-1, 0), 'e': (1, 0), 'c': (0, 0)}
 
 def move_unit(unit, direction, unit_map):
     print (direction)
@@ -243,12 +243,10 @@ def agent(observation, configuration):
                         pos = find_closest_city_candidate(game_map, unit.pos, player)
                         if pos is not None:
                             action = move_unit(unit, unit.pos.direction_to(pos), unit_map)
-                            #actions.append(annotate.circle(pos.x, pos.y))
 
                 if action is None:
                     if burn_out_city_pos is not None:
-                        action = unit.move(unit.pos.direction_to(Position(burn_out_city_pos[0], burn_out_city_pos[1])))
-                    # resource drop to closest city
+                        action = move_unit(unit, unit.pos.direction_to(Position(burn_out_city_pos[0], burn_out_city_pos[1])), unit_map)                    
                     else:
                         closest_city_tile = find_closest_city_tile(unit.pos, player)
                         if closest_city_tile is not None:
@@ -256,6 +254,9 @@ def agent(observation, configuration):
                 
                 if action is not None:
                     actions.append(action)
+                else: # unit not move
+                    unit_map[unit.pos.x, unit.pos.y] = True
+
             print (actions)
 
     # you can add debug annotations using the functions in the annotate object
