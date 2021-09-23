@@ -60,9 +60,9 @@ def get_next_cells(game_map, pos):
     for d in deltas:
         x = pos.x + d[0]
         y = pos.y + d[1]
-        if x <= 0 or width < x:
+        if x <= 0 or width <= x:
             continue
-        if y <= 0 or height < y:
+        if y <= 0 or height <= y:
             continue
         cell = game_map.get_cell(x, y)
         cells.append(cell)
@@ -78,9 +78,9 @@ def is_city_candidate(game_map, pos):
     for d in deltas:
         x = pos.x + d[0]
         y = pos.y + d[1]
-        if x <= 0 or width < x:
+        if x <= 0 or width <= x:
             continue
-        if y <= 0 or height < y:
+        if y <= 0 or height <= y:
             continue
         cell = game_map.get_cell(x, y)
         if cell.citytile is not None: # the cell is next to city
