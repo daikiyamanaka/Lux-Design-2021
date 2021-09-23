@@ -142,9 +142,9 @@ def calc_city_burn_fuel(game_map, cities):
             cell = game_map.get_cell_by_pos(tile.pos)
             burn_fuel = calc_citytile_burn_fuel(game_map, cell)
             total_burn_fuel += burn_fuel
-        print (city.fuel, total_burn_fuel)
+        #print (city.fuel, total_burn_fuel)
         may_be_burn_out = city.fuel <= total_burn_fuel * 10
-        tile_info[(tile.pos.x, tile.pos.y)] = (burn_fuel, may_be_burn_out)
+        tile_info[(tile.pos.x, tile.pos.y)] = ((city.cityid, city.fuel, total_burn_fuel), may_be_burn_out)
     return tile_info
 
 
@@ -153,7 +153,7 @@ deltas = {'n': (0, -1), 's': (0, 1), 'w': (-1, 0), 'e': (1, 0), 'c': (0, 0)}
 unit_destinations = []
 
 def get_random_direction():
-    dirs = ['n', 's', 'w', 'e', 'c']
+    dirs = ['n', 'e', 's', 'w', 'c']
     return dirs[np.random.randint(0, 4)]
 
 def move_unit(unit, direction, unit_map):
@@ -183,13 +183,41 @@ def move_unit(unit, direction, unit_map):
 def get_movable_map(game_map, player):
     pass
     #movable_map = np.zeros((width, height), dtype=bool)
-
     #return movable_map
 
+def is_trying_to_move_city(pos, d):
+    width, height = game_state.map.width, game_state.map.height
+    delta = deltas[d]
+    x = pos.x + delta[0]
+    y = pos.y + delta[1]
+
+    if x <= 0 or width <= x:
+        return False
+    if y <= 0 or height <= y:
+        return False
+    
+    cell = game_state.map.get_cell_by_pos(Position(x, y))
+    if cell.citytile is not None:
+        return True
+
+    return False
+
+def get_cross_direction(d):
+    dirs = ['n', 'e', 's', 'w']
+    if d not in dirs:
+        return d
+    index = dirs.index(d)
+    val = np.random.randint(100)
+    if val % 2 == 0:
+        cross_d = dirs[(index+1)%4]
+    else:
+        cross_d = dirs[index-1]
+
+    return cross_d
+    
 
 def agent(observation, configuration):
     global game_state
-
     
     ### Do not edit ###
     if observation["step"] == 0:
@@ -200,6 +228,8 @@ def agent(observation, configuration):
     else:
         game_state._update(observation["updates"])
     
+    print (f'Turn #{game_state.turn}')
+
     actions = []
 
     ### AI Code goes down here! ### 
@@ -224,6 +254,8 @@ def agent(observation, configuration):
     # count units
     num_workers = sum([unit.is_worker() for unit in player.units])
     num_carts = sum([unit.is_cart() for unit in player.units])
+
+    print (f'num_workers: {num_workers}, num_carts: {num_carts}')
 
     num_cititiles = sum([len(city.citytiles) for city in player.cities.values()])
     cititiles = []
@@ -271,9 +303,14 @@ def agent(observation, configuration):
                     if unit.can_build(game_map):
                         action = unit.build_city()
                     else: # move to freespace next to city
+                        print ('enough fuel but can not build')
                         pos = find_closest_city_candidate(game_map, unit.pos, player)
+                        d = unit.pos.direction_to(pos)
+                        if is_trying_to_move_city(unit.pos, d):
+                            d = get_cross_direction(d)
+                            
                         if pos is not None:
-                            action = move_unit(unit, unit.pos.direction_to(pos), unit_map)
+                            action = move_unit(unit, d, unit_map)
 
                 if action is None:
                     if burn_out_city_pos is not None:
@@ -287,6 +324,10 @@ def agent(observation, configuration):
                 actions.append(action)
             else: # unit not move
                 unit_map[unit.pos.x, unit.pos.y] = True
+
+    for name, city in player.cities.items():
+        print (f'name: {name}, fuel: {city.fuel}')
+    print (tile_info)
 
     for dst in unit_destinations:
         actions.append(annotate.circle(dst[0], dst[1]))
