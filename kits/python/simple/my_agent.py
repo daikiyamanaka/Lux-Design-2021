@@ -258,7 +258,7 @@ def agent(observation, configuration):
 
     # we iterate over all our units and do something with them
     for unit in player.units:
-        if unit.is_worker() and unit.can_act():
+        if (unit.is_worker() or unit.is_cart()) and unit.can_act():
             action = None
             if unit.get_cargo_space_left() > 0:
                 closest_resource_tile = find_closest_resources(unit.pos, player, resource_tiles)
@@ -286,8 +286,6 @@ def agent(observation, configuration):
                 actions.append(action)
             else: # unit not move
                 unit_map[unit.pos.x, unit.pos.y] = True
-
-            print (actions)
 
     for dst in unit_destinations:
         actions.append(annotate.circle(dst[0], dst[1]))
