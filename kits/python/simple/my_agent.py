@@ -175,6 +175,10 @@ def agent(observation, configuration):
             if cell.has_resource():
                 resource_tiles.append(cell)
 
+    # count units
+    num_workers = sum([unit.is_worker() for unit in player.units])
+    num_carts = sum([unit.is_cart() for unit in player.units])
+
     num_cititiles = sum([len(city.citytiles) for city in player.cities.values()])
     cititiles = []
     for city in player.cities.values():
@@ -183,7 +187,10 @@ def agent(observation, configuration):
             # city has enough fuel
             if tile.can_act():
                 if num_cititiles > len(player.units):
-                    action = tile.build_worker()
+                    if num_workers / 5 <= num_carts:
+                        action = tile.build_worker()
+                    else:
+                        action = tile.build_cart()
                 else:
                     action = tile.research()
                 actions.append(action)
