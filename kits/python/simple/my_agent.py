@@ -61,9 +61,9 @@ def get_next_cells(game_map, pos):
     for d in deltas:
         x = pos.x + d[0]
         y = pos.y + d[1]
-        if x <= 0 or width <= x:
+        if x < 0 or width <= x:
             continue
-        if y <= 0 or height <= y:
+        if y < 0 or height <= y:
             continue
         cell = game_map.get_cell(x, y)
         cells.append(cell)
@@ -79,9 +79,9 @@ def is_city_candidate(game_map, pos):
     for d in deltas:
         x = pos.x + d[0]
         y = pos.y + d[1]
-        if x <= 0 or width <= x:
+        if x < 0 or width <= x:
             continue
-        if y <= 0 or height <= y:
+        if y < 0 or height <= y:
             continue
         cell = game_map.get_cell(x, y)
         if cell.citytile is not None: # the cell is next to city
@@ -157,14 +157,15 @@ def get_random_direction():
     return dirs[np.random.randint(0, 4)]
 
 def move_unit(unit, direction, unit_map):
+    print(f'pos:({unit.pos.x}, {unit.pos.y}), dir:{direction}')
     width, height = game_state.map.width, game_state.map.height
     delta = deltas[direction]
     x = unit.pos.x + delta[0]
     y = unit.pos.y + delta[1]
 
-    if x <= 0 or width <= x:
+    if x < 0 or width <= x:
         return None
-    if y <= 0 or height <= y:
+    if y < 0 or height <= y:
         return None
 
     if unit_map[x, y]:  # already visited
@@ -191,9 +192,9 @@ def is_trying_to_move_city(pos, d):
     x = pos.x + delta[0]
     y = pos.y + delta[1]
 
-    if x <= 0 or width <= x:
+    if x < 0 or width <= x:
         return False
-    if y <= 0 or height <= y:
+    if y < 0 or height <= y:
         return False
     
     cell = game_state.map.get_cell_by_pos(Position(x, y))
@@ -333,4 +334,7 @@ def agent(observation, configuration):
         actions.append(annotate.circle(dst[0], dst[1]))
     # you can add debug annotations using the functions in the annotate object
     # actions.append(annotate.circle(0, 0))
+
+    print (actions)
+
     return actions
