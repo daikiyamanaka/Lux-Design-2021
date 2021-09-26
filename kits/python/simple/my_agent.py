@@ -89,19 +89,25 @@ def is_city_candidate(game_map, pos):
     return False
 
 # snippet to find the closest city tile to a position
-def find_closest_city_tile(pos, player):
+def find_closest_city_tile(pos, player, cityid=None):
     closest_city_tile = None
     if len(player.cities) > 0:
         closest_dist = math.inf
         # the cities are stored as a dictionary mapping city id to the city object, which has a citytiles field that
         # contains the information of all citytiles in that city
         for k, city in player.cities.items():
+            # when cityid is not None, skip different city
+            if cityid != None:
+                if city.cityid != cityid:
+                    continue
             for city_tile in city.citytiles:
                 dist = city_tile.pos.distance_to(pos)
                 if dist < closest_dist:
                     closest_dist = dist
                     closest_city_tile = city_tile
     return closest_city_tile
+
+
 
 
 def find_closest_city_candidate(game_map, pos, player):
@@ -144,7 +150,7 @@ def calc_city_burn_fuel(game_map, cities):
             total_burn_fuel += burn_fuel
         #print (city.fuel, total_burn_fuel)
         may_be_burn_out = city.fuel <= total_burn_fuel * 10
-        tile_info[(tile.pos.x, tile.pos.y)] = ((city.cityid, city.fuel, total_burn_fuel), may_be_burn_out)
+        tile_info[(tile.pos.x, tile.pos.y)] = (city, total_burn_fuel, may_be_burn_out)
     return tile_info
 
 
@@ -281,11 +287,18 @@ def agent(observation, configuration):
     tile_info = calc_city_burn_fuel(game_map, player.cities.values())
     enough_fuel = True
     burn_out_city_pos = None
-    for tile_pos, (burn_fuel, burn_out) in tile_info.items():
+    largest_city_size = -1
+    largest_city_id = None
+    for tile_pos, (city, burn_fuel, burn_out) in tile_info.items():
         if burn_out:
             enough_fuel = False
-            burn_out_city_pos = tile_pos
-            break
+            city_size = len(city.citytiles)
+            if city_size > largest_city_size:
+                burn_out_city_pos = tile_pos
+                largest_city_size = city_size
+                largest_city_id = city.cityid
+    print (f'largest city: {largest_city_id}')
+            
     
     # grid map for avoid collision
     unit_map = np.zeros((width, height), dtype=bool)
@@ -315,7 +328,9 @@ def agent(observation, configuration):
 
                 if action is None:
                     if burn_out_city_pos is not None:
-                        action = move_unit(unit, unit.pos.direction_to(Position(burn_out_city_pos[0], burn_out_city_pos[1])), unit_map)                    
+                        tile = find_closest_city_tile(unit.pos, player, cityid=largest_city_id)
+                        if tile is not None:
+                            action = move_unit(unit, unit.pos.direction_to(tile.pos), unit_map)
                     else:
                         closest_city_tile = find_closest_city_tile(unit.pos, player)
                         if closest_city_tile is not None:
@@ -327,7 +342,7 @@ def agent(observation, configuration):
                 unit_map[unit.pos.x, unit.pos.y] = True
 
     for name, city in player.cities.items():
-        print (f'name: {name}, fuel: {city.fuel}')
+        print (f'name: {name}, fuel: {city.fuel}, num_file: {len(city.citytiles)}')
     print (tile_info)
 
     for dst in unit_destinations:
