@@ -319,9 +319,10 @@ def agent(observation, configuration):
                     else: # move to freespace next to city
                         print ('enough fuel but can not build')
                         pos = find_closest_city_candidate(game_map, unit.pos, player)
-                        d = unit.pos.direction_to(pos)
-                        if is_trying_to_move_city(unit.pos, d):
-                            d = get_cross_direction(d)
+                        if pos is not None:
+                            d = unit.pos.direction_to(pos)
+                            if is_trying_to_move_city(unit.pos, d):
+                                d = get_cross_direction(d)
                             
                         if pos is not None:
                             action = move_unit(unit, d, unit_map)
