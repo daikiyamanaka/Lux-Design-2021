@@ -238,8 +238,11 @@ def agent(observation, configuration):
     print (f'Turn #{game_state.turn}')
 
     day = False
-    if game_state.turn // 40 < 30:
+    if game_state.turn % 40 < 30:
         day = True
+        print ('day')
+    else:
+        print ('night')
 
 
 
