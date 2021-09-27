@@ -237,6 +237,12 @@ def agent(observation, configuration):
     
     print (f'Turn #{game_state.turn}')
 
+    day = False
+    if game_state.turn // 40 < 30:
+        day = True
+
+
+
     actions = []
 
     ### AI Code goes down here! ### 
@@ -307,7 +313,7 @@ def agent(observation, configuration):
     for unit in player.units:
         if (unit.is_worker() or unit.is_cart()) and unit.can_act():
             action = None
-            if unit.get_cargo_space_left() > 0:
+            if unit.get_cargo_space_left() > 0 and day:
                 closest_resource_tile = find_closest_resources(unit.pos, player, resource_tiles)
                 if closest_resource_tile is not None:                    
                     action = move_unit(unit, unit.pos.direction_to(closest_resource_tile.pos), unit_map)
